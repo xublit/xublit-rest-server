@@ -1,0 +1,51 @@
+{
+  "name": "xublit-rest-server",
+  "description": "REST server module for Xublit",
+  "version": "1.0.0-rc.1",
+  "main": "dist/rest-server.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "grunt unit"
+  },
+  "homepage": "https://github.com/xublit/xublit-rest-server",
+  "author": {
+    "name": "Cal Milne",
+    "email": "cal@calmilne.com",
+    "web": "https://github.com/luminous-patterns"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xublit/xublit-rest-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xublit/xublit-rest-server/issues"
+  },
+  "license": "MIT",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/xublit/xublit-rest-server/blob/master/LICENSE"
+    }
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "babel-core": "~6.4.5",
+    "babel-polyfill": "~6.3.14",
+    "babel-preset-es2015": "~6.3.13",
+    "faithful-exec": "^0.1.0",
+    "grunt": "~0.4.5",
+    "grunt-babel": "~6.0.0",
+    "grunt-banner": "^0.6.0",
+    "grunt-contrib-clean": "~0.7.0",
+    "grunt-contrib-jshint": "~0.12.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "jasmine": "^2.4.1",
+    "jasmine-core": "~2.4.1",
+    "jasmine-spec-reporter": "^2.4.0",
+    "load-grunt-tasks": "~0.4.0",
+    "q": "^1.4.1",
+    "shelljs": "^0.5.3"
+  }
+}
