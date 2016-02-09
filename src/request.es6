@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 
+import * as util from 'util';
 import * as url from 'url';
 
 import * as __ from './constants';
@@ -18,7 +19,7 @@ export function bootstrap () {
 
             defineProperties(this, incomingMessage);
 
-            subscribeToEvents(this, incomingMessage);
+            bindEventListeners(this, incomingMessage);
 
         }
 
@@ -35,14 +36,14 @@ function defineProperties (restServerRequest, incomingMessage) {
     var dataReceived;
     var pathParamParser;
 
-    var reqUrl = url.parse(incomingMessage.url);
+    var reqUrl = url.parse(incomingMessage.url, true);
     var reqMethod = incomingMessage.method.toUpperCase();
     var contentType = incomingMessage.headers['content-type'] ||
         DEFAULT_REQUEST_MIME_TYPE;
     
     var reqPath = reqUrl.pathname;
 
-    Object.defineProperties(this, {
+    Object.defineProperties(restServerRequest, {
 
         incomingMessage: {
             value: incomingMessage,
@@ -60,6 +61,11 @@ function defineProperties (restServerRequest, incomingMessage) {
 
         isOptions: {
             value: isOptionsMethod(reqMethod),
+            enumerable: true,
+        },
+
+        host: {
+            value: reqUrl,
             enumerable: true,
         },
 
@@ -84,7 +90,7 @@ function defineProperties (restServerRequest, incomingMessage) {
         },
 
         queryParams: {
-            value: parseQueryString(reqUrl),
+            value: reqUrl.query,
             enumerable: true,
         },
 
@@ -182,15 +188,11 @@ function parseRawBody (rawBody, mimeType) {
 
 }
 
-function subscribeToEvents (restServerRequest, incomingMessage) {
+function bindEventListeners (restServerRequest, incomingMessage) {
 
     var rawDataChunks = [];
 
-    incomingMessage.on('data', (chunk) => {
-        rawDataChunks.push(chunk);
-    });
-
-    incomingMessage.on('end', () => {
+    incomingMessage.once('end', () => {
         
         var rawBody = rawDataChunks.join('');
         var parsedBody = parseRawBody(rawBody, restServerRequest.contentType);
@@ -201,6 +203,10 @@ function subscribeToEvents (restServerRequest, incomingMessage) {
 
         restServerRequest.emit('received');
 
+    });
+
+    incomingMessage.on('data', (chunk) => {
+        rawDataChunks.push(chunk.toString());
     });
 
 }
