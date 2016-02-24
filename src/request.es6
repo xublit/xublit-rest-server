@@ -17,9 +17,7 @@ export function bootstrap () {
 
             super();
 
-            defineProperties(this, incomingMessage);
-
-            bindEventListeners(this, incomingMessage);
+            initProps(this, incomingMessage);
 
         }
 
@@ -29,12 +27,15 @@ export function bootstrap () {
 
 }
 
-function defineProperties (restServerRequest, incomingMessage) {
+function initProps (restServerRequest, incomingMessage) {
+
+    var rawBodyChunks = [];
+    var rawBody;
 
     var body;
-    var rawBody;
-    var dataReceived;
     var pathParamParser;
+
+    var bodyReceived = false;
 
     var reqUrl = url.parse(incomingMessage.url, true);
     var reqMethod = incomingMessage.method.toUpperCase();
@@ -112,22 +113,12 @@ function defineProperties (restServerRequest, incomingMessage) {
             get: function () {
                 return body;
             },
-            set: function (newValue) {
-                if (undefined === body) {
-                    body = newValue;
-                }
-            },
         },
 
         rawBody: {
             enumerable: true,
             get: function () {
                 return rawBody;
-            },
-            set: function (newValue) {
-                if (undefined === rawBody) {
-                    rawBody = newValue;
-                }
             },
         },
 
@@ -145,17 +136,10 @@ function defineProperties (restServerRequest, incomingMessage) {
             },
         },
 
-        dataReceived: {
+        bodyReceived: {
             enumerable: true,
             get: function () {
-                return undefined === dataReceived ? false : dataReceived;
-            },
-            set: function (newValue) {
-
-                if (undefined === dataReceived) {
-                    pathParamParser = newValue;
-                }
-
+                return bodyReceived;
             },
         },
 
@@ -164,6 +148,23 @@ function defineProperties (restServerRequest, incomingMessage) {
             enumerable: true,
         },
 
+    });
+
+    restServerRequest.once('incomingMessage.received', function () {
+
+    });
+
+    incomingMessage.once('end', function () {
+        
+        rawBody = rawBodyChunks.join('');
+        bodyReceived = true;
+
+        restServerRequest.emit('incomingMessage.received');
+
+    });
+
+    incomingMessage.on('data', function (chunk) {
+        rawBodyChunks.push(chunk.toString());
     });
 
 }
@@ -185,29 +186,6 @@ function parseRawBody (rawBody, mimeType) {
     }
 
     return parsedBody;
-
-}
-
-function bindEventListeners (restServerRequest, incomingMessage) {
-
-    var rawDataChunks = [];
-
-    incomingMessage.once('end', () => {
-        
-        var rawBody = rawDataChunks.join('');
-        var parsedBody = parseRawBody(rawBody, restServerRequest.contentType);
-
-        restServerRequest.body = body;
-        restServerRequest.rawBody = rawBody;
-        restServerRequest.dataReceived = true;
-
-        restServerRequest.emit('received');
-
-    });
-
-    incomingMessage.on('data', (chunk) => {
-        rawDataChunks.push(chunk.toString());
-    });
 
 }
 

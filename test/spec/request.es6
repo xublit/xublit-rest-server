@@ -9,6 +9,69 @@ const RestServerRequest = bootstrapRequestModule();
 
 describe('Request Server Module', () => {
 
+    describe('events', () => {
+    
+        var restServerRequest;
+        var fakeIncomingMessage;
+        var utf8RequestBody;
+        var entireRequestBody;
+        var requestBodyChunks;
+
+        beforeEach(() => {
+
+            fakeIncomingMessage = new EventEmitter();
+
+            Object.assign(fakeIncomingMessage, {
+                url: 'http://localhost/todos',
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                },
+            });
+
+            restServerRequest = new RestServerRequest(
+                fakeIncomingMessage
+            );
+
+            restServerRequest.pathParamParser = function () { };
+
+            let pathParams = {
+                todoId: '1234',
+            };
+
+            spyOn(restServerRequest, 'pathParamParser')
+                .and.returnValue(pathParams);
+
+            utf8RequestBody = '{"foo":"bar","baz":"quux","meow":"woof"}';
+            entireRequestBody = new Buffer(utf8RequestBody, 'utf8');
+
+            requestBodyChunks = []; // Lets get chunky :3
+
+            for (let i = 0; i < 8; i++) {
+
+                let start = i * 5;
+                let end = start + 5;
+
+                requestBodyChunks.push(entireRequestBody.slice(start, end));
+
+            }
+
+        });
+
+        it('should listen for and appropriately handle the "data" and "end" events emitted by the IncomingMessage', () => {
+
+            requestBodyChunks.forEach(function (chunk) {
+                fakeIncomingMessage.emit('data', chunk);
+            });
+
+            fakeIncomingMessage.emit('end');
+
+            expect(restServerRequest.rawBody).toBe(utf8RequestBody);
+
+        });
+
+    });
+
     describe('properties', () => {
 
         describe('of a GET request', () => {
