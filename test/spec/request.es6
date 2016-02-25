@@ -58,7 +58,7 @@ describe('Request Server Module', () => {
 
         });
 
-        it('should listen for and appropriately handle the "data" and "end" events emitted by the IncomingMessage', () => {
+        it('should listen for, and appropriately handle the "data" and "end" events emitted by the IncomingMessage', () => {
 
             requestBodyChunks.forEach(function (chunk) {
                 fakeIncomingMessage.emit('data', chunk);
