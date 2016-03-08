@@ -2,180 +2,175 @@ import * as url from 'url';
 import * as util from 'util';
 import * as uuid from 'node-uuid';
 
+import RestServerRequest from './rest-server-request';
+import RestServerResponse from './rest-server-response';
+
 import * as error from './error';
 import * as __ from './constants';
 
 const DEFAULT_TIMEOUT_MS = 20000; // 20 seconds
 
-export var name = 'RestServerCall';
-export var inject = ['RestServerCallContext', 'RestServerRequest', 'RestServerResponse'];
-export function bootstrap (RestServerCallContext, RestServerRequest, RestServerResponse) {
+export default class RestApiCall {
 
-    class RestApiCall {
+    constructor (handler, incomingMessage, serverResponse) {
 
-        constructor (handler, incomingMessage, serverResponse) {
+        var request = new RestServerRequest(incomingMessage);
+        var response = new RestServerResponse(serverResponse);
 
-            var request = new RestServerRequest(incomingMessage);
-            var response = new RestServerResponse(serverResponse);
+        defineProperties(this, handler, request, response);
 
-            defineProperties(this, handler, request, response);
+        bindEventListeners(this);
 
-            bindEventListeners(this);
+    }
 
-        }
+    static uuid () {
+        return uuid.v4();
+    }
 
-        static uuid () {
-            return uuid.v4();
-        }
+    get rawRequestBody () {
+        return this.request.rawBody;
+    }
 
-        get rawRequestBody () {
-            return this.request.rawBody;
-        }
+    get params () {
+        return _.extend(
+            {},
+            this.__requestBody || {},
+            this.__queryParams || {}
+        );
+    }
 
-        get params () {
-            return _.extend(
-                {},
-                this.__requestBody || {},
-                this.__queryParams || {}
+    get responseHeaders () {
+
+        var defaultHeaders = RestApiCall.defaultHeaders(
+            this.__incomingMessage
+        );
+
+        return _.extend({}, defaultHeaders, this._responseHeaders);
+
+    }
+
+    set responseContentType (newValue) {
+        this._responseHeaders['Content-Type'] = newValue;
+    }
+
+    get responseContentType () {
+        return this.responseHeaders['Content-Type'];
+    }
+
+    // hasReqBody () {
+    //     return '' !== this.rawRequestBody;
+    // }
+
+    __setupAuthContext () {
+
+    }
+
+    __addEventListeners () {
+
+    }
+
+    /**
+     * Response methods
+     */
+
+    respond (statusCode, body) {
+        return this.response.send(body, statusCode);
+    }
+
+    responseTimeout () {
+        this.respond(__.HTTP_STATUS_INTERNAL_ERROR, error.serverTimedOut());
+    }
+
+    respondInvalidAuth () {
+        this.respond(__.HTTP_STATUS_BAD_REQUEST, error.invalidAuth());
+    }
+
+    respondUnauthorised () {
+        this.respond(__.HTTP_STATUS_BAD_REQUEST, error.unauthorized());
+    }
+
+    respondSuccess (body) {
+        this.respond(__.HTTP_STATUS_OK, body);
+    }
+
+    respondAccepted (body) {
+        this.respond(__.HTTP_STATUS_ACCEPTED, body || undefined);
+    }
+
+    respondNotFound () {
+        this.respond(__.HTTP_STATUS_NOT_FOUND);
+    }
+
+    respondNoContent () {
+        this.respond(__.HTTP_STATUS_NO_CONTENT);
+    }
+
+    respondBadRequest (err) {
+        this.respond(
+            __.HTTP_STATUS_BAD_REQUEST,
+            error.badRequest(err.message)
+        );
+    }
+
+    respondInternalError (err) {
+        this.respond(
+            __.HTTP_STATUS_INTERNAL_ERROR,
+            error.internal(err.message)
+        );
+    }
+
+    assertHasParam (paramPath) {
+
+        var hasParam = this.deepExists(['params', paramPath].join('.'));
+        if (!hasParam) {
+            throw $e.newError(
+                ERROR_MESSAGE_MISSING_REQUIRED_PARAM,
+                paramPath
             );
-        }
-
-        get responseHeaders () {
-
-            var defaultHeaders = RestApiCall.defaultHeaders(
-                this.__incomingMessage
-            );
-
-            return _.extend({}, defaultHeaders, this._responseHeaders);
-
-        }
-
-        set responseContentType (newValue) {
-            this._responseHeaders['Content-Type'] = newValue;
-        }
-
-        get responseContentType () {
-            return this.responseHeaders['Content-Type'];
-        }
-
-        // hasReqBody () {
-        //     return '' !== this.rawRequestBody;
-        // }
-
-        __setupAuthContext () {
-
-        }
-
-        __addEventListeners () {
-
-        }
-
-        /**
-         * Response methods
-         */
-
-        respond (statusCode, body) {
-            return this.response.send(body, statusCode);
-        }
-
-        responseTimeout () {
-            this.respond(__.HTTP_STATUS_INTERNAL_ERROR, error.serverTimedOut());
-        }
-
-        respondInvalidAuth () {
-            this.respond(__.HTTP_STATUS_BAD_REQUEST, error.invalidAuth());
-        }
-
-        respondUnauthorised () {
-            this.respond(__.HTTP_STATUS_BAD_REQUEST, error.unauthorized());
-        }
-
-        respondSuccess (body) {
-            this.respond(__.HTTP_STATUS_OK, body);
-        }
-
-        respondAccepted (body) {
-            this.respond(__.HTTP_STATUS_ACCEPTED, body || undefined);
-        }
-
-        respondNotFound () {
-            this.respond(__.HTTP_STATUS_NOT_FOUND);
-        }
-
-        respondNoContent () {
-            this.respond(__.HTTP_STATUS_NO_CONTENT);
-        }
-
-        respondBadRequest (err) {
-            this.respond(
-                __.HTTP_STATUS_BAD_REQUEST,
-                error.badRequest(err.message)
-            );
-        }
-
-        respondInternalError (err) {
-            this.respond(
-                __.HTTP_STATUS_INTERNAL_ERROR,
-                error.internal(err.message)
-            );
-        }
-
-        assertHasParam (paramPath) {
-
-            var hasParam = this.deepExists(['params', paramPath].join('.'));
-            if (!hasParam) {
-                throw $e.newError(
-                    ERROR_MESSAGE_MISSING_REQUIRED_PARAM,
-                    paramPath
-                );
-            }
-
-        }
-
-        getPathParam (paramName) {
-            return paramName in this.request.pathParams ?
-                this.request.pathParams[paramName] :
-                undefined;
-        }
-
-        getParam (paramPath) {
-            return this.deepFind(['params', paramPath].join('.'));
-        }
-
-        getRequiredParam (paramPath) {
-            this.assertHasParam(paramPath);
-            return this.deepFind(['params', paramPath].join('.'));
-        }
-
-        getContextParam (param) {
-            return param in this.context ? this.context[param] : undefined;
-        }
-
-        buildObjectUsing (paramPaths) {
-
-            var object = {};
-
-            if ('contextParams' in paramPaths) {
-                addContextParamsToObject(this, paramPaths.contextParams, object, {
-                    // omitUndefined: true
-                });
-            }
-
-            if ('requestParams' in paramPaths) {
-                addRequestParamsToObject(this, paramPaths.requestParams, object, {
-                    // omitUndefined: true
-                });
-            }
-
-            return object;
-
         }
 
     }
 
-    return RestApiCall;
+    getPathParam (paramName) {
+        return paramName in this.request.pathParams ?
+            this.request.pathParams[paramName] :
+            undefined;
+    }
 
-};
+    getParam (paramPath) {
+        return this.deepFind(['params', paramPath].join('.'));
+    }
+
+    getRequiredParam (paramPath) {
+        this.assertHasParam(paramPath);
+        return this.deepFind(['params', paramPath].join('.'));
+    }
+
+    getContextParam (param) {
+        return param in this.context ? this.context[param] : undefined;
+    }
+
+    buildObjectUsing (paramPaths) {
+
+        var object = {};
+
+        if ('contextParams' in paramPaths) {
+            addContextParamsToObject(this, paramPaths.contextParams, object, {
+                // omitUndefined: true
+            });
+        }
+
+        if ('requestParams' in paramPaths) {
+            addRequestParamsToObject(this, paramPaths.requestParams, object, {
+                // omitUndefined: true
+            });
+        }
+
+        return object;
+
+    }
+
+}
 
 function done (restServerCall) {
 

@@ -11,6 +11,11 @@ export const MIME_TYPE_TEXT_PLAIN = 'text/plain';
 export const ENCODING_UTF_8 = 'UTF-8';
 
 /**
+ * Header values
+ */
+export const OUTBOUND_SERVER_HEADER = 'XublitRestServer/v1';
+
+/**
  * HTTP/1.1 Status Codes
  */
 export const HTTP_STATUS_OK = 200;

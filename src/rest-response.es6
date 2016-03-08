@@ -31,7 +31,7 @@ export default class RestServerResponse extends OutboundHttpMessage {
 
         return Object.assign(responseHeaders, {
 
-            'Server': 'XublitRestServer/v1',
+            'Server': __.OUTBOUND_SERVER_HEADER,
 
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': allowMethods.join(', '),

@@ -1,11 +1,9 @@
-import { bootstrap as bootstrapRequestModule } from '../../src/request';
+import RestServerRequest from '../../src/rest-request';
 import * as __ from '../../src/constants';
 
 import { Url } from 'url'; 
 import * as util from 'util'; 
 import EventEmitter from 'events';
-
-const RestServerRequest = bootstrapRequestModule();
 
 describe('Request Server Module', () => {
 
