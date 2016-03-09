@@ -6,6 +6,14 @@ export default class HttpMessage extends EventEmitter {
 
         super();
 
+        initProps(this);
+
     }
+
+}
+
+function initProps (httpMessage) {
+
+    
 
 }

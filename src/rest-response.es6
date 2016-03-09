@@ -9,7 +9,7 @@ export default class RestServerResponse extends OutboundHttpMessage {
 
     constructor (serverResponse) {
 
-        super();
+        super(serverResponse);
 
         defineProperties(this, serverResponse);
 

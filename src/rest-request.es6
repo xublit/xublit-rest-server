@@ -11,9 +11,11 @@ export default class RestServerRequest extends InboundHttpMessage {
 
     constructor (incomingMessage) {
 
-        super();
+        super(incomingMessage);
 
         initProps(this, incomingMessage);
+
+        // this.parseHeaders(incomingMessage.headers);
 
     }
 
